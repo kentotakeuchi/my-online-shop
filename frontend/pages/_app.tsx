@@ -1,26 +1,38 @@
-import type { AppProps /*, AppContext */ } from 'next/app'
+import type { AppProps, AppContext } from 'next/app'
 import Router from 'next/router'
 import NProgress from 'nprogress'
 import '../components/styles/nprogress.css'
+import { ApolloProvider } from '@apollo/client'
+import withData from '../lib/withData'
+import Page from '../components/page'
 
 Router.events.on('routeChangeStart', () => NProgress.start())
 Router.events.on('routeChangeComplete', () => NProgress.done())
 Router.events.on('routeChangeError', () => NProgress.done())
 
-function MyApp({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />
+interface NewAppProps extends AppProps {
+  apollo: any
 }
 
-// Only uncomment this method if you have blocking data requirements for
-// every single page in your application. This disables the ability to
-// perform automatic static optimization, causing every page in your app to
-// be server-side rendered.
-//
-// MyApp.getInitialProps = async (appContext: AppContext) => {
-//   // calls page's `getInitialProps` and fills `appProps.pageProps`
-//   const appProps = await App.getInitialProps(appContext);
+// TODO: type..
+const MyApp: any = ({ Component, pageProps, apollo }: NewAppProps): JSX.Element => {
+  return (
+    <ApolloProvider client={apollo}>
+      <Page>
+        <Component {...pageProps} />
+      </Page>
+    </ApolloProvider>
+  )
+}
 
-//   return { ...appProps }
-// }
+MyApp.getInitialProps = async ({ Component, ctx }: AppContext) => {
+  // TODO: type..
+  let pageProps: { query?: any } = {}
+  if (Component.getInitialProps) {
+    pageProps = await Component.getInitialProps(ctx)
+  }
+  pageProps.query = ctx.query
+  return { pageProps }
+}
 
-export default MyApp
+export default withData(MyApp)
